@@ -2,7 +2,7 @@
 
 ### [👉 Go to the challenge 👈](./CHALLENGE.md)
 
-### [🚀 See the app in action 🚀](https://spacerockets.netlify.app)
+### [🚀 See the app in action 🚀](https://ascential-frontend-challenge.netlify.app)
 
 ## Develop
 - run `yarn` to install dependencies
