@@ -2,11 +2,12 @@
 
 ### [👉 Go to the challenge 👈](./CHALLENGE.md)
 
-### [🚀 See the app in action 🚀](https://ascential-frontend-challenge.netlify.app)
+### [🚀 See the app in action 🚀](https://ascential-frontend-challenge.development.platform-team.com)
 
 ## Develop
+- create `.env` file based on `.env.sample`
 - run `yarn` to install dependencies
-- run `yarn start` to start development environment
+- run `yarn dev` to start development environment
 
 ## Build
 - run `yarn` to install dependencies
