@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import {
 	SimpleGrid,
 	Flex,
@@ -9,11 +9,18 @@ import {
 	Badge,
 	LinkBox,
 	LinkOverlay,
+	IconButton,
 } from "@chakra-ui/react";
+import { StarIcon } from "@chakra-ui/icons";
 import { Link as BrowserLink } from "react-router-dom";
 import { useSeatGeek } from "../utils/useSeatGeek";
 import Error from "./Error";
 import Breadcrumbs from "./Breadcrumbs";
+import {
+	getFavourites,
+	addFavourite,
+	removeFavourite,
+} from "../utils/favourites";
 
 export interface VenueProps {
 	id: number;
@@ -21,9 +28,10 @@ export interface VenueProps {
 	num_upcoming_events: number;
 	name_v2: string;
 	display_location: string;
+	venues: string;
 }
 
-interface VenuItemProps {
+interface VenueItemProps {
 	venue: VenueProps;
 }
 
@@ -32,6 +40,48 @@ const Venues: React.FC = () => {
 		sort: "score.desc",
 		per_page: "24",
 	});
+
+	const [favouriteVenues, setfavouriteVenues] = useState<VenueProps[]>([]);
+	const [favouritesMap, setfavouritesMap] = useState<Record<number, boolean>>(
+		{}
+	);
+
+	useEffect(() => {
+		if (data) {
+			const favouriteIds = getFavourites();
+			const favouritesMap = favouriteIds.reduce((acc, id) => {
+				acc[parseInt(id)] = true;
+				return acc;
+			}, {} as Record<number, boolean>);
+			setfavouritesMap(favouritesMap);
+			const filteredfavourites = data.venues?.filter(
+				(venue: VenueProps) =>
+					favouriteIds.includes(venue.id.toString())
+			);
+			setfavouriteVenues(filteredfavourites || []);
+		}
+	}, [data]);
+
+	const handleFavouriteToggle = (id: number) => {
+		if (favouritesMap[id]) {
+			removeFavourite(id.toString());
+		} else {
+			addFavourite(id.toString());
+		}
+		setfavouritesMap((prev) => {
+			const updatedMap = { ...prev, [id]: !prev[id] };
+			const updatedfavourites = Object.keys(updatedMap)
+				.filter((key) => updatedMap[parseInt(key)])
+				.map((key) => key.toString());
+			setfavouriteVenues(
+				data.venues?.filter(
+					(venue: { id: { toString: () => string } }) =>
+						updatedfavourites.includes(venue.id.toString())
+				) || []
+			);
+			return updatedMap;
+		});
+	};
 
 	if (error) return <Error />;
 
@@ -48,16 +98,48 @@ const Venues: React.FC = () => {
 			<Breadcrumbs
 				items={[{ label: "Home", to: "/" }, { label: "Venues" }]}
 			/>
+
+			{favouriteVenues.length > 0 && (
+				<>
+					<Heading size="lg" m="6">
+						Your Favourite Venues
+					</Heading>
+					<SimpleGrid spacing="6" m="6" minChildWidth="350px">
+						{favouriteVenues.map((venue: VenueProps) => (
+							<VenueItem
+								key={venue.id.toString()}
+								venue={venue}
+								isfavourite={!!favouritesMap[venue.id]}
+								onFavouriteToggle={handleFavouriteToggle}
+							/>
+						))}
+					</SimpleGrid>
+				</>
+			)}
+
+			<Heading size="lg" m="6">
+				All Venues
+			</Heading>
 			<SimpleGrid spacing="6" m="6" minChildWidth="350px">
 				{data.venues?.map((venue: VenueProps) => (
-					<VenueItem key={venue.id.toString()} venue={venue} />
+					<VenueItem
+						key={venue.id.toString()}
+						venue={venue}
+						isfavourite={!!favouritesMap[venue.id]}
+						onFavouriteToggle={handleFavouriteToggle}
+					/>
 				))}
 			</SimpleGrid>
 		</>
 	);
 };
 
-const VenueItem: React.FC<VenuItemProps> = ({ venue }) => (
+const VenueItem: React.FC<
+	VenueItemProps & {
+		isfavourite: boolean;
+		onFavouriteToggle: (id: number) => void;
+	}
+> = ({ venue, isfavourite, onFavouriteToggle }) => (
 	<LinkBox>
 		<Box
 			p={[4, 6]}
@@ -85,6 +167,16 @@ const VenueItem: React.FC<VenuItemProps> = ({ venue }) => (
 			<Text fontSize="sm" color="gray.500">
 				{venue.display_location}
 			</Text>
+			<IconButton
+				aria-label={
+					isfavourite ? "Remove from favourites" : "Add to favourites"
+				}
+				icon={<StarIcon />}
+				onClick={() => onFavouriteToggle(venue.id)}
+				colorScheme={isfavourite ? "yellow" : "gray"}
+				variant="outline"
+				mt="2"
+			/>
 		</Box>
 	</LinkBox>
 );

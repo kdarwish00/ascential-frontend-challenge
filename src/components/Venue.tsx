@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
 import {
 	Flex,
@@ -11,20 +11,24 @@ import {
 	Box,
 	Spinner,
 	AspectRatio,
+	IconButton,
 } from "@chakra-ui/react";
+import { StarIcon } from "@chakra-ui/icons";
 import Breadcrumbs from "./Breadcrumbs";
 import Error from "./Error";
 import { useSeatGeek } from "../utils/useSeatGeek";
+import {
+	addFavourite,
+	removeFavourite,
+	isfavourite,
+} from "../utils/favourites";
 
-interface StatsProps {
-	venue: {
-		city: string;
-		country: string;
-		capacity: number;
-	};
-}
-
-interface MapProps {
+interface VenueProps {
+	id: number;
+	name: string;
+	city: string;
+	country: string;
+	capacity: number;
 	location: {
 		lat: number;
 		lon: number;
@@ -32,8 +36,26 @@ interface MapProps {
 }
 
 const Venue: React.FC = () => {
-	const { venueId } = useParams();
+	const { venueId } = useParams<{ venueId: string }>();
 	const { data: venue, error } = useSeatGeek(`venues/${venueId}`);
+	const [favourite, setfavourite] = useState<boolean>(false);
+
+	useEffect(() => {
+		if (venueId) {
+			setfavourite(isfavourite(venueId));
+		}
+	}, [venueId]);
+
+	const handleFavouriteToggle = () => {
+		if (venueId) {
+			if (favourite) {
+				removeFavourite(venueId);
+			} else {
+				addFavourite(venueId);
+			}
+			setfavourite(!favourite);
+		}
+	};
 
 	if (error) return <Error />;
 
@@ -54,8 +76,15 @@ const Venue: React.FC = () => {
 					{ label: venue.name },
 				]}
 			/>
-			<Flex bgColor="gray.200" p={[4, 6]}>
+			<Flex bgColor="gray.200" p={[4, 6]} justifyContent="space-between">
 				<Heading>{venue.name}</Heading>
+				<IconButton
+					aria-label="Add to favourites"
+					icon={<StarIcon />}
+					onClick={handleFavouriteToggle}
+					colorScheme={favourite ? "yellow" : "gray"}
+					variant="outline"
+				/>
 			</Flex>
 			<Stats venue={venue} />
 			<Map location={venue.location} />
@@ -63,7 +92,7 @@ const Venue: React.FC = () => {
 	);
 };
 
-const Stats: React.FC<StatsProps> = ({ venue }) => (
+const Stats: React.FC<{ venue: VenueProps }> = ({ venue }) => (
 	<SimpleGrid
 		columns={[1, 1, 2]}
 		borderWidth="1px"
@@ -89,7 +118,9 @@ const Stats: React.FC<StatsProps> = ({ venue }) => (
 	</SimpleGrid>
 );
 
-const Map: React.FC<MapProps> = ({ location }) => (
+const Map: React.FC<{ location: { lat: number; lon: number } }> = ({
+	location,
+}) => (
 	<AspectRatio ratio={16 / 5}>
 		<Box
 			as="iframe"

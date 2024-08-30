@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import {
 	SimpleGrid,
 	Flex,
@@ -12,12 +12,20 @@ import {
 	Image,
 	LinkBox,
 	LinkOverlay,
+	IconButton,
 } from "@chakra-ui/react";
 import { Link } from "react-router-dom";
+import { StarIcon } from "@chakra-ui/icons";
 import Breadcrumbs from "./Breadcrumbs";
 import Error from "./Error";
 import { useSeatGeek } from "../utils/useSeatGeek";
 import { formatDateTime } from "../utils/formatDateTime";
+import {
+	getFavourites,
+	addFavourite,
+	removeFavourite,
+	isfavourite,
+} from "../utils/favourites";
 
 export interface Performers {
 	image: string;
@@ -39,6 +47,8 @@ export interface EventProps {
 
 interface EventItemProps {
 	event: EventProps;
+	onFavouriteToggle: (id: string) => void;
+	isFav: boolean;
 }
 
 const Events: React.FC = () => {
@@ -47,6 +57,33 @@ const Events: React.FC = () => {
 		sort: "score.desc",
 		per_page: "24",
 	});
+
+	const [favouriteEvents, setfavouriteEvents] = useState<EventProps[]>([]);
+
+	useEffect(() => {
+		if (data) {
+			const favouriteIds = getFavourites();
+			const filteredfavourites = data.events?.filter(
+				(event: EventProps) => favouriteIds.includes(event.id)
+			);
+			setfavouriteEvents(filteredfavourites || []);
+		}
+	}, [data]);
+
+	const handleFavouriteToggle = (id: string) => {
+		if (isfavourite(id)) {
+			removeFavourite(id);
+		} else {
+			addFavourite(id);
+		}
+		// Update the favourite events list after toggling
+		const updatedfavouriteIds = getFavourites();
+		const updatedfavouriteEvents =
+			data.events?.filter((event: EventProps) =>
+				updatedfavouriteIds.includes(event.id)
+			) || [];
+		setfavouriteEvents(updatedfavouriteEvents);
+	};
 
 	if (error) return <Error />;
 
@@ -63,16 +100,47 @@ const Events: React.FC = () => {
 			<Breadcrumbs
 				items={[{ label: "Home", to: "/" }, { label: "Events" }]}
 			/>
+
+			{favouriteEvents.length > 0 && (
+				<>
+					<Heading size="lg" m="6">
+						Your Favourite Events
+					</Heading>
+					<SimpleGrid spacing="6" m="6" minChildWidth="350px">
+						{favouriteEvents.map((event: EventProps) => (
+							<EventItem
+								key={event.id}
+								event={event}
+								onFavouriteToggle={handleFavouriteToggle}
+								isFav={true}
+							/>
+						))}
+					</SimpleGrid>
+				</>
+			)}
+
+			<Heading size="lg" m="6">
+				All Events
+			</Heading>
 			<SimpleGrid spacing="6" m="6" minChildWidth="350px">
 				{data.events?.map((event: EventProps) => (
-					<EventItem key={event.id.toString()} event={event} />
+					<EventItem
+						key={event.id}
+						event={event}
+						onFavouriteToggle={handleFavouriteToggle}
+						isFav={isfavourite(event.id)}
+					/>
 				))}
 			</SimpleGrid>
 		</>
 	);
 };
 
-const EventItem: React.FC<EventItemProps> = ({ event }) => (
+const EventItem: React.FC<EventItemProps> = ({
+	event,
+	onFavouriteToggle,
+	isFav,
+}) => (
 	<LinkBox
 		as={Card}
 		variant="outline"
@@ -80,15 +148,34 @@ const EventItem: React.FC<EventItemProps> = ({ event }) => (
 		bg="gray.50"
 		borderColor="gray.200"
 		_hover={{ bg: "gray.100" }}
+		maxWidth="500px"
 	>
 		<Image src={event.performers[0].image} />
 		<CardBody>
 			<Stack spacing="2">
-				<Heading size="md">
-					<LinkOverlay as={Link} to={`/events/${event.id}`}>
-						{event.short_title}
-					</LinkOverlay>
-				</Heading>
+				<Flex align="center" justify="space-between">
+					<Heading size="md">
+						<LinkOverlay as={Link} to={`/events/${event.id}`}>
+							{event.short_title}
+						</LinkOverlay>
+					</Heading>
+					<IconButton
+						aria-label={
+							isFav
+								? "Remove from favourites"
+								: "Add to favourites"
+						}
+						icon={<StarIcon />}
+						onClick={() => {
+							console.log(
+								`Toggling favourite for event ${event.id}`
+							); // Debugging
+							onFavouriteToggle(event.id);
+						}}
+						colorScheme={isFav ? "yellow" : "gray"}
+						variant="outline"
+					/>
+				</Flex>
 				<Box>
 					<Text fontSize="sm" color="gray.600">
 						{event.venue.name_v2}
