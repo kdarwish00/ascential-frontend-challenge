@@ -26,6 +26,7 @@ export interface Performers {
 export interface Venue {
 	name_v2: string;
 	display_location: string;
+	timezone: string;
 }
 
 export interface EventProps {
