@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
 import {
 	Flex,
@@ -13,15 +13,23 @@ import {
 	Button,
 	Stack,
 	Tooltip,
+	IconButton,
 } from "@chakra-ui/react";
+import { StarIcon } from "@chakra-ui/icons";
 import Breadcrumbs from "./Breadcrumbs";
 import Error from "./Error";
 import { useSeatGeek } from "../utils/useSeatGeek";
 import { formatDateTime } from "../utils/formatDateTime";
+import {
+	addFavourite,
+	removeFavourite,
+	isfavourite,
+} from "../utils/favourites";
 import { type Venue } from "./Events";
 
 interface EventInfoProps {
 	event: {
+		id: string;
 		short_title: string;
 		datetime_utc: Date;
 		venue: Venue;
@@ -32,6 +40,25 @@ interface EventInfoProps {
 const Event: React.FC = () => {
 	const { eventId } = useParams();
 	const { data: event, error } = useSeatGeek(`events/${eventId}`);
+	const [favourite, setfavourite] = useState(false);
+
+	useEffect(() => {
+		if (event) {
+			const isEventfavourite = isfavourite(event.id);
+			setfavourite(isEventfavourite);
+		}
+	}, [event]);
+
+	const handleFavouriteToggle = () => {
+		if (event) {
+			if (favourite) {
+				removeFavourite(event.id);
+			} else {
+				addFavourite(event.id);
+			}
+			setfavourite(!favourite);
+		}
+	};
 
 	if (error) return <Error />;
 
@@ -52,8 +79,21 @@ const Event: React.FC = () => {
 					{ label: event.short_title },
 				]}
 			/>
-			<Flex bgColor="gray.200" p={[4, 6]}>
+			<Flex bgColor="gray.200" p={[4, 6]} justifyContent="space-between">
 				<Heading>{event.short_title}</Heading>
+				<IconButton
+					aria-label={
+						favourite
+							? "Remove from favourites"
+							: "Add to favourites"
+					}
+					icon={<StarIcon />}
+					onClick={() => {
+						handleFavouriteToggle();
+					}}
+					colorScheme={favourite ? "yellow" : "gray"}
+					variant="outline"
+				/>
 			</Flex>
 			<EventInfo event={event} />
 		</>
