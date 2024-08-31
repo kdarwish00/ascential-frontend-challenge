@@ -12,11 +12,9 @@ import {
 	Image,
 	LinkBox,
 	LinkOverlay,
-	IconButton,
 	Select,
 } from "@chakra-ui/react";
 import { Link } from "react-router-dom";
-import { StarIcon } from "@chakra-ui/icons";
 import Breadcrumbs from "./Breadcrumbs";
 import Error from "./Error";
 import { useSeatGeek } from "../utils/useSeatGeek";
@@ -27,7 +25,8 @@ import {
 	removeFavourite,
 	isFavourite,
 } from "../utils/favourites";
-import { applyFilters } from "../utils/filterEvents";
+import { applyEventFilters } from "../utils/filterEvents";
+import FavouriteButton from "./FavouriteButton";
 
 export interface Performers {
 	name: string;
@@ -78,7 +77,7 @@ const Events: React.FC = () => {
 
 	useEffect(() => {
 		if (data) {
-			const filtered = applyFilters(
+			const filtered = applyEventFilters(
 				data.events || [],
 				locationFilter,
 				performerFilter
@@ -215,21 +214,9 @@ const EventItem: React.FC<EventItemProps> = ({
 							{event.short_title}
 						</LinkOverlay>
 					</Heading>
-					<IconButton
-						aria-label={
-							isFav
-								? "Remove from favourites"
-								: "Add to favourites"
-						}
-						icon={<StarIcon />}
-						onClick={() => {
-							console.log(
-								`Toggling favourite for event ${event.id}`
-							); // Debugging
-							onFavouriteToggle(event.id);
-						}}
-						colorScheme={isFav ? "yellow" : "gray"}
-						variant="outline"
+					<FavouriteButton
+						isFavourite={isFav}
+						onToggle={() => onFavouriteToggle(event.id)}
 					/>
 				</Flex>
 				<Box>

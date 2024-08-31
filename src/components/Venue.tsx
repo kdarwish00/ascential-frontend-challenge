@@ -11,9 +11,7 @@ import {
 	Box,
 	Spinner,
 	AspectRatio,
-	IconButton,
 } from "@chakra-ui/react";
-import { StarIcon } from "@chakra-ui/icons";
 import Breadcrumbs from "./Breadcrumbs";
 import Error from "./Error";
 import { useSeatGeek } from "../utils/useSeatGeek";
@@ -22,6 +20,7 @@ import {
 	removeFavourite,
 	isFavourite,
 } from "../utils/favourites";
+import FavouriteButton from "./FavouriteButton";
 
 interface VenueProps {
 	id: number;
@@ -38,11 +37,11 @@ interface VenueProps {
 const Venue: React.FC = () => {
 	const { venueId } = useParams<{ venueId: string }>();
 	const { data: venue, error } = useSeatGeek(`venues/${venueId}`);
-	const [favourite, setfavourite] = useState<boolean>(false);
+	const [favourite, setFavourite] = useState<boolean>(false);
 
 	useEffect(() => {
 		if (venueId) {
-			setfavourite(isFavourite(venueId));
+			setFavourite(isFavourite(venueId));
 		}
 	}, [venueId]);
 
@@ -53,7 +52,7 @@ const Venue: React.FC = () => {
 			} else {
 				addFavourite(venueId);
 			}
-			setfavourite(!favourite);
+			setFavourite(!favourite);
 		}
 	};
 
@@ -78,12 +77,9 @@ const Venue: React.FC = () => {
 			/>
 			<Flex bgColor="gray.200" p={[4, 6]} justifyContent="space-between">
 				<Heading>{venue.name}</Heading>
-				<IconButton
-					aria-label="Add to favourites"
-					icon={<StarIcon />}
-					onClick={handleFavouriteToggle}
-					colorScheme={favourite ? "yellow" : "gray"}
-					variant="outline"
+				<FavouriteButton
+					isFavourite={favourite}
+					onToggle={handleFavouriteToggle}
 				/>
 			</Flex>
 			<Stats venue={venue} />

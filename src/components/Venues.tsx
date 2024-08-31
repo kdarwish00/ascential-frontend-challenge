@@ -9,19 +9,19 @@ import {
 	Badge,
 	LinkBox,
 	LinkOverlay,
-	IconButton,
 	Select,
 } from "@chakra-ui/react";
-import { StarIcon } from "@chakra-ui/icons";
 import { Link as BrowserLink } from "react-router-dom";
 import { useSeatGeek } from "../utils/useSeatGeek";
 import Error from "./Error";
 import Breadcrumbs from "./Breadcrumbs";
+import FavouriteButton from "./FavouriteButton";
 import {
 	getFavourites,
 	addFavourite,
 	removeFavourite,
 } from "../utils/favourites";
+import { filterVenuesByLocation } from "../utils/filterEvents";
 
 export interface VenueProps {
 	id: number;
@@ -29,11 +29,13 @@ export interface VenueProps {
 	num_upcoming_events: number;
 	name_v2: string;
 	display_location: string;
-	venues: string; // Note: This field may not be used in your code
+	venues: string;
 }
 
 interface VenueItemProps {
 	venue: VenueProps;
+	isFavourite: boolean;
+	onFavouriteToggle: (id: number) => void;
 }
 
 const Venues: React.FC = () => {
@@ -42,8 +44,8 @@ const Venues: React.FC = () => {
 		per_page: "24",
 	});
 
-	const [favouriteVenues, setfavouriteVenues] = useState<VenueProps[]>([]);
-	const [favouritesMap, setfavouritesMap] = useState<Record<number, boolean>>(
+	const [favouriteVenues, setFavouriteVenues] = useState<VenueProps[]>([]);
+	const [favouritesMap, setFavouritesMap] = useState<Record<number, boolean>>(
 		{}
 	);
 	const [selectedLocation, setSelectedLocation] = useState<string | null>(
@@ -58,15 +60,14 @@ const Venues: React.FC = () => {
 				acc[parseInt(id)] = true;
 				return acc;
 			}, {} as Record<number, boolean>);
-			setfavouritesMap(favouritesMap);
+			setFavouritesMap(favouritesMap);
 
 			// Filter favourite venues based on favourite IDs only
-			const filteredfavourites = data.venues.filter((venue: VenueProps) =>
+			const filteredFavourites = data.venues.filter((venue: VenueProps) =>
 				favouriteIds.includes(venue.id.toString())
 			);
-			setfavouriteVenues(filteredfavourites || []);
+			setFavouriteVenues(filteredFavourites || []);
 
-			// Extract unique locations for the filter dropdown
 			const locations = [
 				...new Set(
 					data.venues.map(
@@ -84,28 +85,25 @@ const Venues: React.FC = () => {
 		} else {
 			addFavourite(id.toString());
 		}
-		setfavouritesMap((prev) => {
+		setFavouritesMap((prev) => {
 			const updatedMap = { ...prev, [id]: !prev[id] };
-			const updatedfavourites = Object.keys(updatedMap)
+			const updatedFavourites = Object.keys(updatedMap)
 				.filter((key) => updatedMap[parseInt(key)])
 				.map((key) => key.toString());
-			setfavouriteVenues(
+			setFavouriteVenues(
 				data?.venues?.filter(
 					(venue: { id: { toString: () => string } }) =>
-						updatedfavourites.includes(venue.id.toString())
+						updatedFavourites.includes(venue.id.toString())
 				) || []
 			);
 			return updatedMap;
 		});
 	};
 
-	// Filter only applies to all venues, not favourites
-	const filteredAllVenues = (data?.venues || []).filter((venue: VenueProps) =>
-		selectedLocation
-			? venue.display_location
-					.toLowerCase()
-					.includes(selectedLocation.toLowerCase())
-			: true
+	// Apply location filter to all venues
+	const filteredAllVenues = filterVenuesByLocation(
+		data?.venues || [],
+		selectedLocation || ""
 	);
 
 	if (error) return <Error />;
@@ -178,12 +176,11 @@ const Venues: React.FC = () => {
 	);
 };
 
-const VenueItem: React.FC<
-	VenueItemProps & {
-		isFavourite: boolean;
-		onFavouriteToggle: (id: number) => void;
-	}
-> = ({ venue, isFavourite, onFavouriteToggle }) => (
+const VenueItem: React.FC<VenueItemProps> = ({
+	venue,
+	isFavourite,
+	onFavouriteToggle,
+}) => (
 	<LinkBox>
 		<Box
 			p={[4, 6]}
@@ -211,15 +208,9 @@ const VenueItem: React.FC<
 			<Text fontSize="sm" color="gray.500">
 				{venue.display_location}
 			</Text>
-			<IconButton
-				aria-label={
-					isFavourite ? "Remove from favourites" : "Add to favourites"
-				}
-				icon={<StarIcon />}
-				onClick={() => onFavouriteToggle(venue.id)}
-				colorScheme={isFavourite ? "yellow" : "gray"}
-				variant="outline"
-				mt="2"
+			<FavouriteButton
+				isFavourite={isFavourite}
+				onToggle={() => onFavouriteToggle(venue.id)}
 			/>
 		</Box>
 	</LinkBox>

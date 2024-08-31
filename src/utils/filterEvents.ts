@@ -1,4 +1,5 @@
 import { type EventProps } from "../components/Events";
+import { type VenueProps } from "../components/Venues";
 
 export const filterEventsByLocation = (
 	events: EventProps[],
@@ -25,7 +26,23 @@ export const filterEventsByPerformer = (
 	);
 };
 
-export const applyFilters = (
+export const filterVenuesByLocation = (
+	venues: VenueProps[],
+	locationFilter: string
+) => {
+	return venues.filter(
+		(venue) => !locationFilter || venue.display_location === locationFilter
+	);
+};
+
+export const applyVenueFilter = (
+	venues: VenueProps[],
+	locationFilter: string
+) => {
+	return filterVenuesByLocation(venues, locationFilter);
+};
+
+export const applyEventFilters = (
 	events: EventProps[],
 	locationFilter: string,
 	performerFilter: string
