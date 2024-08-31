@@ -44,7 +44,7 @@ export const removeFavourite = (id: string): void => {
  *
  * @returns {boolean} Returns `true` if the item ID is in the favourites list, otherwise `false`.
  */
-export const isfavourite = (id: string): boolean => {
+export const isFavourite = (id: string): boolean => {
 	const favourites = getFavourites();
 	return favourites.includes(id);
 };

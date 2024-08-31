@@ -14,6 +14,8 @@ import {
 	Stack,
 	Tooltip,
 	IconButton,
+	Image,
+	Text,
 } from "@chakra-ui/react";
 import { StarIcon } from "@chakra-ui/icons";
 import Breadcrumbs from "./Breadcrumbs";
@@ -23,7 +25,7 @@ import { formatDateTime } from "../utils/formatDateTime";
 import {
 	addFavourite,
 	removeFavourite,
-	isfavourite,
+	isFavourite,
 } from "../utils/favourites";
 import { type Venue } from "./Events";
 
@@ -37,15 +39,30 @@ interface EventInfoProps {
 	};
 }
 
+interface RecommendationEvent {
+	id: number;
+	short_title: string;
+	datetime_utc: Date;
+	performers: {
+		name: string;
+		image: string;
+	}[];
+	venue: {
+		name: string;
+		display_location: string;
+	};
+	url: string;
+}
+
 const Event: React.FC = () => {
-	const { eventId } = useParams();
-	const { data: event, error } = useSeatGeek(`events/${eventId}`);
-	const [favourite, setfavourite] = useState(false);
+	const { eventId } = useParams<{ eventId: string }>();
+	const { data: event, error, isLoading } = useSeatGeek(`events/${eventId}`);
+	const [favourite, setFavourite] = useState(false);
 
 	useEffect(() => {
 		if (event) {
-			const isEventfavourite = isfavourite(event.id);
-			setfavourite(isEventfavourite);
+			const isEventFavourite = isFavourite(event.id);
+			setFavourite(isEventFavourite);
 		}
 	}, [event]);
 
@@ -56,18 +73,36 @@ const Event: React.FC = () => {
 			} else {
 				addFavourite(event.id);
 			}
-			setfavourite(!favourite);
+			setFavourite(!favourite);
 		}
 	};
 
-	if (error) return <Error />;
+	// Fetch recommendations
+	const {
+		data: recommendations,
+		error: recError,
+		isLoading: isRecLoading,
+	} = useSeatGeek(
+		"recommendations",
+		{
+			"event.id": event?.id || "",
+			postal_code: event?.venue?.postal_code || "",
+		},
+		true // Indicate that this is for recommendations
+	);
 
-	if (!event) {
+	// Handle loading state
+	if (isLoading) {
 		return (
 			<Flex justifyContent="center" alignItems="center" minHeight="50vh">
 				<Spinner size="lg" />
 			</Flex>
 		);
+	}
+
+	// Handle error state
+	if (error) {
+		return <Error />;
 	}
 
 	return (
@@ -88,14 +123,66 @@ const Event: React.FC = () => {
 							: "Add to favourites"
 					}
 					icon={<StarIcon />}
-					onClick={() => {
-						handleFavouriteToggle();
-					}}
+					onClick={handleFavouriteToggle}
 					colorScheme={favourite ? "yellow" : "gray"}
 					variant="outline"
 				/>
 			</Flex>
 			<EventInfo event={event} />
+
+			{!isRecLoading && !recError && recommendations && (
+				<Stack spacing="4" m="6">
+					<Heading size="lg">Recommended Just for You</Heading>
+					<SimpleGrid columns={[1, 2, 3]} spacing="4">
+						{recommendations.recommendations.map(
+							({
+								event: recEvent,
+							}: {
+								event: RecommendationEvent;
+							}) => (
+								<Box
+									key={recEvent.id}
+									borderWidth="1px"
+									borderRadius="md"
+									p="4"
+									maxWidth="400px"
+								>
+									<Image
+										src={recEvent.performers[0].image}
+										alt={recEvent.short_title}
+										borderRadius="md"
+										mb="4"
+										width="100%"
+									/>
+									<Heading size="sm">
+										{recEvent.short_title}
+									</Heading>
+									<Text>
+										{recEvent.venue.name} -{" "}
+										{recEvent.venue.display_location}
+									</Text>
+									<Stat>
+										<StatLabel>Date</StatLabel>
+										<StatNumber fontSize="md">
+											{formatDateTime(
+												recEvent.datetime_utc
+											)}
+										</StatNumber>
+									</Stat>
+									<Button
+										as="a"
+										href={recEvent.url}
+										colorScheme="blue"
+										mt="4"
+									>
+										View Event
+									</Button>
+								</Box>
+							)
+						)}
+					</SimpleGrid>
+				</Stack>
+			)}
 		</>
 	);
 };
@@ -130,7 +217,7 @@ const EventInfo: React.FC<EventInfoProps> = ({ event }) => (
 			</Stat>
 		</SimpleGrid>
 		<Flex>
-			<Button as={"a"} href={event.url} minWidth="0">
+			<Button as="a" href={event.url} minWidth="0">
 				Buy Tickets
 			</Button>
 		</Flex>

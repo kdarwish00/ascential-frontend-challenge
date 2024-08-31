@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, ChangeEvent } from "react";
 import {
 	SimpleGrid,
 	Flex,
@@ -13,6 +13,7 @@ import {
 	LinkBox,
 	LinkOverlay,
 	IconButton,
+	Select,
 } from "@chakra-ui/react";
 import { Link } from "react-router-dom";
 import { StarIcon } from "@chakra-ui/icons";
@@ -24,10 +25,12 @@ import {
 	getFavourites,
 	addFavourite,
 	removeFavourite,
-	isfavourite,
+	isFavourite,
 } from "../utils/favourites";
+import { applyFilters } from "../utils/filterEvents";
 
 export interface Performers {
+	name: string;
 	image: string;
 }
 
@@ -52,37 +55,50 @@ interface EventItemProps {
 }
 
 const Events: React.FC = () => {
+	const [locationFilter, setLocationFilter] = useState<string>("");
+	const [performerFilter, setPerformerFilter] = useState<string>("");
+	const [favouriteEvents, setFavouriteEvents] = useState<EventProps[]>([]);
+	const [filteredEvents, setFilteredEvents] = useState<EventProps[]>([]);
+
 	const { data, error } = useSeatGeek("/events", {
 		type: "concert",
 		sort: "score.desc",
 		per_page: "24",
 	});
 
-	const [favouriteEvents, setfavouriteEvents] = useState<EventProps[]>([]);
-
 	useEffect(() => {
 		if (data) {
 			const favouriteIds = getFavourites();
-			const filteredfavourites = data.events?.filter(
+			const filteredFavourites = data.events?.filter(
 				(event: EventProps) => favouriteIds.includes(event.id)
 			);
-			setfavouriteEvents(filteredfavourites || []);
+			setFavouriteEvents(filteredFavourites || []);
 		}
 	}, [data]);
 
+	useEffect(() => {
+		if (data) {
+			const filtered = applyFilters(
+				data.events || [],
+				locationFilter,
+				performerFilter
+			);
+			setFilteredEvents(filtered);
+		}
+	}, [data, locationFilter, performerFilter]);
+
 	const handleFavouriteToggle = (id: string) => {
-		if (isfavourite(id)) {
+		if (isFavourite(id)) {
 			removeFavourite(id);
 		} else {
 			addFavourite(id);
 		}
-		// Update the favourite events list after toggling
-		const updatedfavouriteIds = getFavourites();
-		const updatedfavouriteEvents =
+		const updatedFavouriteIds = getFavourites();
+		const updatedFavouriteEvents =
 			data.events?.filter((event: EventProps) =>
-				updatedfavouriteIds.includes(event.id)
+				updatedFavouriteIds.includes(event.id)
 			) || [];
-		setfavouriteEvents(updatedfavouriteEvents);
+		setFavouriteEvents(updatedFavouriteEvents);
 	};
 
 	if (error) return <Error />;
@@ -95,43 +111,83 @@ const Events: React.FC = () => {
 		);
 	}
 
+	const events = data.events as EventProps[];
+
+	const locations = [
+		...new Set(events.map((event) => event.venue.display_location)),
+	];
+	const performers = [
+		...new Set(
+			events.flatMap((event) => event.performers.map((p) => p.name))
+		),
+	];
+
 	return (
 		<>
 			<Breadcrumbs
 				items={[{ label: "Home", to: "/" }, { label: "Events" }]}
 			/>
 
-			{favouriteEvents.length > 0 && (
-				<>
-					<Heading size="lg" m="6">
-						Your Favourite Events
-					</Heading>
-					<SimpleGrid spacing="6" m="6" minChildWidth="350px">
-						{favouriteEvents.map((event: EventProps) => (
-							<EventItem
-								key={event.id}
-								event={event}
-								onFavouriteToggle={handleFavouriteToggle}
-								isFav={true}
-							/>
+			<Flex direction="column" m="6" gap="4">
+				<Flex gap="4">
+					<Select
+						placeholder="Filter by location"
+						value={locationFilter}
+						onChange={(e: ChangeEvent<HTMLSelectElement>) =>
+							setLocationFilter(e.target.value)
+						}
+					>
+						<option value="">All Locations</option>
+						{locations.map((location) => (
+							<option key={location} value={location}>
+								{location}
+							</option>
 						))}
-					</SimpleGrid>
-				</>
-			)}
+					</Select>
+					<Select
+						placeholder="Filter by performer"
+						value={performerFilter}
+						onChange={(e: ChangeEvent<HTMLSelectElement>) =>
+							setPerformerFilter(e.target.value)
+						}
+					>
+						<option value="">All Performers</option>
+						{performers.map((performer) => (
+							<option key={performer} value={performer}>
+								{performer}
+							</option>
+						))}
+					</Select>
+				</Flex>
 
-			<Heading size="lg" m="6">
-				All Events
-			</Heading>
-			<SimpleGrid spacing="6" m="6" minChildWidth="350px">
-				{data.events?.map((event: EventProps) => (
-					<EventItem
-						key={event.id}
-						event={event}
-						onFavouriteToggle={handleFavouriteToggle}
-						isFav={isfavourite(event.id)}
-					/>
-				))}
-			</SimpleGrid>
+				{favouriteEvents.length > 0 && (
+					<>
+						<Heading size="lg">Your Favourite Events</Heading>
+						<SimpleGrid spacing="6" minChildWidth="350px">
+							{favouriteEvents.map((event: EventProps) => (
+								<EventItem
+									key={event.id}
+									event={event}
+									onFavouriteToggle={handleFavouriteToggle}
+									isFav={true}
+								/>
+							))}
+						</SimpleGrid>
+					</>
+				)}
+
+				<Heading size="lg">All Events</Heading>
+				<SimpleGrid spacing="6" minChildWidth="350px">
+					{filteredEvents.map((event: EventProps) => (
+						<EventItem
+							key={event.id}
+							event={event}
+							onFavouriteToggle={handleFavouriteToggle}
+							isFav={isFavourite(event.id)}
+						/>
+					))}
+				</SimpleGrid>
+			</Flex>
 		</>
 	);
 };

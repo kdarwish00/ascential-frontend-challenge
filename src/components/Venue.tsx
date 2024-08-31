@@ -20,7 +20,7 @@ import { useSeatGeek } from "../utils/useSeatGeek";
 import {
 	addFavourite,
 	removeFavourite,
-	isfavourite,
+	isFavourite,
 } from "../utils/favourites";
 
 interface VenueProps {
@@ -42,7 +42,7 @@ const Venue: React.FC = () => {
 
 	useEffect(() => {
 		if (venueId) {
-			setfavourite(isfavourite(venueId));
+			setfavourite(isFavourite(venueId));
 		}
 	}, [venueId]);
 

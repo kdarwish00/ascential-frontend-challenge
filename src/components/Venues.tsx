@@ -10,6 +10,7 @@ import {
 	LinkBox,
 	LinkOverlay,
 	IconButton,
+	Select,
 } from "@chakra-ui/react";
 import { StarIcon } from "@chakra-ui/icons";
 import { Link as BrowserLink } from "react-router-dom";
@@ -45,6 +46,10 @@ const Venues: React.FC = () => {
 	const [favouritesMap, setfavouritesMap] = useState<Record<number, boolean>>(
 		{}
 	);
+	const [selectedLocation, setSelectedLocation] = useState<string | null>(
+		null
+	);
+	const [uniqueLocations, setUniqueLocations] = useState<string[]>([]);
 
 	useEffect(() => {
 		if (data) {
@@ -54,11 +59,23 @@ const Venues: React.FC = () => {
 				return acc;
 			}, {} as Record<number, boolean>);
 			setfavouritesMap(favouritesMap);
+
+			// Filter favourite venues based on favourite IDs only
 			const filteredfavourites = data.venues?.filter(
 				(venue: VenueProps) =>
 					favouriteIds.includes(venue.id.toString())
 			);
 			setfavouriteVenues(filteredfavourites || []);
+
+			// Extract unique locations for the filter dropdown
+			const locations = [
+				...new Set(
+					data.venues.map(
+						(venue: VenueProps) => venue.display_location
+					)
+				),
+			] as string[];
+			setUniqueLocations(locations);
 		}
 	}, [data]);
 
@@ -83,6 +100,15 @@ const Venues: React.FC = () => {
 		});
 	};
 
+	// Filter only applies to all venues, not favourites
+	const filteredAllVenues = (data.venues || []).filter((venue: VenueProps) =>
+		selectedLocation
+			? venue.display_location
+					.toLowerCase()
+					.includes(selectedLocation.toLowerCase())
+			: true
+	);
+
 	if (error) return <Error />;
 
 	if (!data) {
@@ -99,6 +125,25 @@ const Venues: React.FC = () => {
 				items={[{ label: "Home", to: "/" }, { label: "Venues" }]}
 			/>
 
+			<Flex direction="column" m="6">
+				<Heading size="md" mb="4">
+					Filter by Location
+				</Heading>
+				<Select
+					placeholder="Select location"
+					value={selectedLocation || ""}
+					onChange={(e) => setSelectedLocation(e.target.value)}
+					mb="4"
+				>
+					<option value="">All Locations</option>
+					{uniqueLocations.map((location) => (
+						<option key={location} value={location}>
+							{location}
+						</option>
+					))}
+				</Select>
+			</Flex>
+
 			{favouriteVenues.length > 0 && (
 				<>
 					<Heading size="lg" m="6">
@@ -109,7 +154,7 @@ const Venues: React.FC = () => {
 							<VenueItem
 								key={venue.id.toString()}
 								venue={venue}
-								isfavourite={!!favouritesMap[venue.id]}
+								isFavourite={!!favouritesMap[venue.id]}
 								onFavouriteToggle={handleFavouriteToggle}
 							/>
 						))}
@@ -121,11 +166,11 @@ const Venues: React.FC = () => {
 				All Venues
 			</Heading>
 			<SimpleGrid spacing="6" m="6" minChildWidth="350px">
-				{data.venues?.map((venue: VenueProps) => (
+				{filteredAllVenues.map((venue: VenueProps) => (
 					<VenueItem
 						key={venue.id.toString()}
 						venue={venue}
-						isfavourite={!!favouritesMap[venue.id]}
+						isFavourite={!!favouritesMap[venue.id]}
 						onFavouriteToggle={handleFavouriteToggle}
 					/>
 				))}
@@ -136,10 +181,10 @@ const Venues: React.FC = () => {
 
 const VenueItem: React.FC<
 	VenueItemProps & {
-		isfavourite: boolean;
+		isFavourite: boolean;
 		onFavouriteToggle: (id: number) => void;
 	}
-> = ({ venue, isfavourite, onFavouriteToggle }) => (
+> = ({ venue, isFavourite, onFavouriteToggle }) => (
 	<LinkBox>
 		<Box
 			p={[4, 6]}
@@ -169,11 +214,11 @@ const VenueItem: React.FC<
 			</Text>
 			<IconButton
 				aria-label={
-					isfavourite ? "Remove from favourites" : "Add to favourites"
+					isFavourite ? "Remove from favourites" : "Add to favourites"
 				}
 				icon={<StarIcon />}
 				onClick={() => onFavouriteToggle(venue.id)}
-				colorScheme={isfavourite ? "yellow" : "gray"}
+				colorScheme={isFavourite ? "yellow" : "gray"}
 				variant="outline"
 				mt="2"
 			/>
