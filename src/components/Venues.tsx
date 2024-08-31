@@ -29,7 +29,7 @@ export interface VenueProps {
 	num_upcoming_events: number;
 	name_v2: string;
 	display_location: string;
-	venues: string;
+	venues: string; // Note: This field may not be used in your code
 }
 
 interface VenueItemProps {
@@ -52,7 +52,7 @@ const Venues: React.FC = () => {
 	const [uniqueLocations, setUniqueLocations] = useState<string[]>([]);
 
 	useEffect(() => {
-		if (data) {
+		if (data && data.venues) {
 			const favouriteIds = getFavourites();
 			const favouritesMap = favouriteIds.reduce((acc, id) => {
 				acc[parseInt(id)] = true;
@@ -61,9 +61,8 @@ const Venues: React.FC = () => {
 			setfavouritesMap(favouritesMap);
 
 			// Filter favourite venues based on favourite IDs only
-			const filteredfavourites = data.venues?.filter(
-				(venue: VenueProps) =>
-					favouriteIds.includes(venue.id.toString())
+			const filteredfavourites = data.venues.filter((venue: VenueProps) =>
+				favouriteIds.includes(venue.id.toString())
 			);
 			setfavouriteVenues(filteredfavourites || []);
 
@@ -91,7 +90,7 @@ const Venues: React.FC = () => {
 				.filter((key) => updatedMap[parseInt(key)])
 				.map((key) => key.toString());
 			setfavouriteVenues(
-				data.venues?.filter(
+				data?.venues?.filter(
 					(venue: { id: { toString: () => string } }) =>
 						updatedfavourites.includes(venue.id.toString())
 				) || []
@@ -101,7 +100,7 @@ const Venues: React.FC = () => {
 	};
 
 	// Filter only applies to all venues, not favourites
-	const filteredAllVenues = (data.venues || []).filter((venue: VenueProps) =>
+	const filteredAllVenues = (data?.venues || []).filter((venue: VenueProps) =>
 		selectedLocation
 			? venue.display_location
 					.toLowerCase()
@@ -111,7 +110,7 @@ const Venues: React.FC = () => {
 
 	if (error) return <Error />;
 
-	if (!data) {
+	if (!data || !data.venues) {
 		return (
 			<Flex justifyContent="center" alignItems="center" minHeight="50vh">
 				<Spinner size="lg" />
