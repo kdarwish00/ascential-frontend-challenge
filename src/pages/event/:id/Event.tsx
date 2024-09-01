@@ -1,55 +1,44 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { useParams } from "react-router-dom";
 import {
 	Flex,
 	Heading,
-	Stat,
-	StatLabel,
-	StatNumber,
-	StatHelpText,
 	SimpleGrid,
-	Box,
 	Spinner,
 	Button,
 	Stack,
-	Tooltip,
 } from "@chakra-ui/react";
-import Breadcrumbs from "../../../Breadcrumbs";
-import Error from "../../../Error";
-import { useSeatGeek } from "../../../../utils/useSeatGeek";
-import { formatDateTime } from "../../../../utils/formatDateTime";
+import Breadcrumbs from "../../../components/Breadcrumbs";
+import Error from "../../../components/Error";
+import { useSeatGeek } from "../../../utils/useSeatGeek";
+import { formatDateTime } from "../../../utils/formatDateTime";
+import Recommendations from "../../../components/Recommendations";
+import FavouriteButton from "../../../components/FavouriteButton";
 import {
 	addFavourite,
-	removeFavourite,
 	isFavourite,
-} from "../../../../utils/favourites";
-import Recommendations from "../../../Recommendations";
-import FavouriteButton from "../../../FavouriteButton";
+	removeFavourite,
+} from "../../../utils/favourites";
+import Details from "../../../components/Deatils";
 
 const Event: React.FC = () => {
 	const { eventId } = useParams<{ eventId: string }>();
 	const { data: event, error, isLoading } = useSeatGeek(`events/${eventId}`);
-	const [favourite, setFavourite] = useState(false);
-
-	useEffect(() => {
-		if (event) {
-			const isEventFavourite = isFavourite(event.id, "EventFav");
-			setFavourite(isEventFavourite);
-		}
-	}, [event]);
+	const [favourite, setFavourite] = useState(
+		eventId ? isFavourite(eventId, "EventFav") : false
+	);
 
 	const handleFavouriteToggle = () => {
 		if (event) {
 			if (favourite) {
-				removeFavourite(event.id, "EventFav");
+				removeFavourite(event.id.toString(), "EventFav");
 			} else {
-				addFavourite(event.id, "EventFav");
+				addFavourite(event.id.toString(), "EventFav");
 			}
 			setFavourite(!favourite);
 		}
 	};
 
-	// Fetch recommendations
 	const {
 		data: recommendations,
 		error: recError,
@@ -63,7 +52,6 @@ const Event: React.FC = () => {
 		true
 	);
 
-	// Handle loading state
 	if (isLoading)
 		return (
 			<Flex justifyContent="center" alignItems="center" minHeight="50vh">
@@ -71,7 +59,6 @@ const Event: React.FC = () => {
 			</Flex>
 		);
 
-	// Handle error state
 	if (error) {
 		return <Error />;
 	}
@@ -99,30 +86,20 @@ const Event: React.FC = () => {
 					borderRadius="md"
 					p="4"
 				>
-					<Stat>
-						<StatLabel display="flex">
-							<Box as="span">Venue</Box>
-						</StatLabel>
-						<StatNumber fontSize="xl">
-							{event.venue.name_v2}
-						</StatNumber>
-						<StatHelpText>
-							{event.venue.display_location}
-						</StatHelpText>
-					</Stat>
-					<Stat>
-						<StatLabel display="flex">
-							<Box as="span">Date</Box>
-						</StatLabel>
-						<Tooltip label={formatDateTime(event.datetime_utc)}>
-							<StatNumber fontSize="xl">
-								{formatDateTime(
-									event.datetime_utc,
-									event.venue.timezone
-								)}
-							</StatNumber>
-						</Tooltip>
-					</Stat>
+					<Details
+						label="Venue"
+						value={event.venue.name_v2}
+						helpText={event.venue.display_location}
+					/>
+
+					<Details
+						label="Date"
+						value={formatDateTime(
+							event.datetime_utc,
+							event.venue.timezone
+						)}
+						tooltip={formatDateTime(event.datetime_utc)}
+					/>
 				</SimpleGrid>
 				<Flex>
 					<Button as="a" href={event.url} minWidth="0">

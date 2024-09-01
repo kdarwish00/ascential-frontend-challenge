@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { useParams } from "react-router-dom";
 import {
 	Flex,
@@ -6,21 +6,21 @@ import {
 	Stat,
 	StatLabel,
 	StatNumber,
-	StatHelpText,
 	SimpleGrid,
 	Box,
 	Spinner,
 	AspectRatio,
 } from "@chakra-ui/react";
-import Breadcrumbs from "../../../Breadcrumbs";
-import Error from "../../../Error";
-import { useSeatGeek } from "../../../../utils/useSeatGeek";
+import Breadcrumbs from "../../../components/Breadcrumbs";
+import Error from "../../../components/Error";
+import { useSeatGeek } from "../../../utils/useSeatGeek";
 import {
 	addFavourite,
 	removeFavourite,
 	isFavourite,
-} from "../../../../utils/favourites";
-import FavouriteButton from "../../../FavouriteButton";
+} from "../../../utils/favourites";
+import FavouriteButton from "../../../components/FavouriteButton";
+import Details from "../../../components/Deatils";
 
 interface VenueProps {
 	id: string;
@@ -37,13 +37,9 @@ interface VenueProps {
 const Venue: React.FC = () => {
 	const { venueId } = useParams<{ venueId: string }>();
 	const { data: venue, error } = useSeatGeek(`venues/${venueId}`);
-	const [favourite, setFavourite] = useState<boolean>(false);
-
-	useEffect(() => {
-		if (venueId) {
-			setFavourite(isFavourite(venueId, "VenueFav"));
-		}
-	}, [venueId]);
+	const [favourite, setFavourite] = useState(
+		venueId ? isFavourite(venueId, "VenueFav") : false
+	);
 
 	const handleFavouriteToggle = () => {
 		if (venueId) {
@@ -96,13 +92,7 @@ const Stats: React.FC<{ venue: VenueProps }> = ({ venue }) => (
 		m="6"
 		p="4"
 	>
-		<Stat>
-			<StatLabel display="flex">
-				<Box as="span">Location</Box>
-			</StatLabel>
-			<StatNumber fontSize="xl">{venue.city}</StatNumber>
-			<StatHelpText>{venue.country}</StatHelpText>
-		</Stat>
+		<Details label="Location" value={venue.city} helpText={venue.country} />
 		{venue.capacity > 0 && (
 			<Stat>
 				<StatLabel display="flex">

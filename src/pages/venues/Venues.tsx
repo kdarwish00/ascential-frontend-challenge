@@ -11,17 +11,12 @@ import {
 	Select,
 } from "@chakra-ui/react";
 import { Link as BrowserLink } from "react-router-dom";
-import { useSeatGeek } from "../../../utils/useSeatGeek";
-import Error from "../../Error";
-import Breadcrumbs from "../../Breadcrumbs";
-import FavouriteButton from "../../FavouriteButton";
-import {
-	getLocalStorageList,
-	addFavourite,
-	removeFavourite,
-	isFavourite,
-} from "../../../utils/favourites";
-import { filterVenuesByLocation } from "../../../utils/filterEvents";
+import { useSeatGeek } from "../../utils/useSeatGeek";
+import Error from "../../components/Error";
+import Breadcrumbs from "../../components/Breadcrumbs";
+import FavouriteButton from "../../components/FavouriteButton";
+import { filterVenuesByLocation } from "../../utils/filterEvents";
+import useFavouriteHook from "../../hooks/useFavouriteHook";
 
 export interface VenueProps {
 	id: number;
@@ -34,7 +29,7 @@ export interface VenueProps {
 interface VenueItemProps {
 	venue: VenueProps;
 	isFavourite: boolean;
-	onFavouriteToggle: (id: number) => void;
+	onFavouriteToggle: (id: string) => void;
 }
 
 const Venues: React.FC = () => {
@@ -47,7 +42,8 @@ const Venues: React.FC = () => {
 		null
 	);
 	const [uniqueLocations, setUniqueLocations] = useState<string[]>([]);
-	const [favouriteVenueIds, setFavouriteVenueIds] = useState<string[]>([]);
+	const { handleFavouriteToggle, favourite: favouriteVenueIds } =
+		useFavouriteHook("VenueFav");
 
 	useEffect(() => {
 		if (data && data.venues) {
@@ -61,20 +57,6 @@ const Venues: React.FC = () => {
 			setUniqueLocations(locations);
 		}
 	}, [data]);
-
-	useEffect(() => {
-		const favouriteIds = getLocalStorageList("VenueFav");
-		setFavouriteVenueIds(favouriteIds);
-	}, []);
-
-	const handleFavouriteToggle = (id: number) => {
-		if (isFavourite(id.toString(), "VenueFav")) {
-			removeFavourite(id.toString(), "VenueFav");
-		} else {
-			addFavourite(id.toString(), "VenueFav");
-		}
-		setFavouriteVenueIds(getLocalStorageList("VenueFav"));
-	};
 
 	const filteredAllVenues = filterVenuesByLocation(
 		data?.venues || [],
@@ -186,7 +168,7 @@ const VenueItem: React.FC<VenueItemProps> = ({
 		</Text>
 		<FavouriteButton
 			isFavourite={isFavourite}
-			onToggle={() => onFavouriteToggle(venue.id)}
+			onToggle={() => onFavouriteToggle(venue.id.toString())}
 		/>
 	</LinkBox>
 );

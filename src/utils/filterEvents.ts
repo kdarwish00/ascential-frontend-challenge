@@ -1,5 +1,5 @@
-import { type EventProps } from "../components/pages/events/Events";
-import { type VenueProps } from "../components/pages/venues/Venues";
+import { type EventProps } from "../pages/events/Events";
+import { type VenueProps } from "../pages/venues/Venues";
 
 export const filterEventsByLocation = (
 	events: EventProps[],

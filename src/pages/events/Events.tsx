@@ -15,18 +15,12 @@ import {
 	Select,
 } from "@chakra-ui/react";
 import { Link } from "react-router-dom";
-import Breadcrumbs from "../../Breadcrumbs";
-import Error from "../../Error";
-import { useSeatGeek } from "../../../utils/useSeatGeek";
-import { formatDateTime } from "../../../utils/formatDateTime";
-import {
-	getLocalStorageList,
-	addFavourite,
-	removeFavourite,
-	isFavourite,
-} from "../../../utils/favourites";
-import { applyEventFilters } from "../../../utils/filterEvents";
-import FavouriteButton from "../../FavouriteButton";
+import Breadcrumbs from "../../components/Breadcrumbs";
+import FavouriteButton from "../../components/FavouriteButton";
+import { formatDateTime } from "../../utils/formatDateTime";
+import { applyEventFilters } from "../../utils/filterEvents";
+import { useSeatGeek } from "../../utils/useSeatGeek";
+import useFavouriteHook from "../../hooks/useFavouriteHook";
 
 export interface Performers {
 	name: string;
@@ -56,21 +50,16 @@ interface EventItemProps {
 const Events: React.FC = () => {
 	const [locationFilter, setLocationFilter] = useState<string>("");
 	const [performerFilter, setPerformerFilter] = useState<string>("");
-	const [favouriteEventIds, setFavouriteEventIds] = useState<string[]>([]);
-	const [filteredEvents, setFilteredEvents] = useState<EventProps[]>([]);
 
-	const { data, error } = useSeatGeek("/events", {
+	const [filteredEvents, setFilteredEvents] = useState<EventProps[]>([]);
+	const { handleFavouriteToggle, favourite: favouriteEventIds } =
+		useFavouriteHook("EventFav");
+
+	const { data } = useSeatGeek("/events", {
 		type: "concert",
 		sort: "score.desc",
 		per_page: "24",
 	});
-
-	useEffect(() => {
-		if (data) {
-			const favouriteIds = getLocalStorageList("EventFav");
-			setFavouriteEventIds(favouriteIds);
-		}
-	}, [data]);
 
 	useEffect(() => {
 		if (data) {
@@ -82,17 +71,6 @@ const Events: React.FC = () => {
 			setFilteredEvents(filtered);
 		}
 	}, [data, locationFilter, performerFilter]);
-
-	const handleFavouriteToggle = (id: string) => {
-		if (isFavourite(id, "EventFav")) {
-			removeFavourite(id, "EventFav");
-		} else {
-			addFavourite(id, "EventFav");
-		}
-		setFavouriteEventIds(getLocalStorageList("EventFav"));
-	};
-
-	if (error) return <Error />;
 
 	if (!data) {
 		return (
@@ -114,7 +92,7 @@ const Events: React.FC = () => {
 	];
 
 	const favouriteEvents = events.filter((event) =>
-		favouriteEventIds.includes(event.id)
+		favouriteEventIds.includes(event.id.toString())
 	);
 
 	return (
@@ -178,7 +156,9 @@ const Events: React.FC = () => {
 							key={event.id}
 							event={event}
 							onFavouriteToggle={handleFavouriteToggle}
-							isFav={favouriteEventIds.includes(event.id)}
+							isFav={favouriteEventIds.includes(
+								event.id.toString()
+							)}
 						/>
 					))}
 				</SimpleGrid>
