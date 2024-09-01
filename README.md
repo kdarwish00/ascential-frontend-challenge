@@ -1,21 +1,29 @@
 # Ascential Frontend App
 
-### [👉 Go to the challenge 👈](./CHALLENGE.md)
-
-### [🚀 See the app in action 🚀](https://ascential-frontend-challenge.development.platform-team.com)
+### [Link to my version](https://ascential-project.netlify.app)
 
 ### Task 1
-- would say took an hour to fix/add feature
-- changed the functionality of the formatDateTime util to allow an optional parameter for timezone. If called with timezone, will show the timezone of the events location as the main time and the user time as a tooltip
-- used tooltip from chakra ui
+- **Estimated time**: 1 hour
+- Updated the `formatDateTime` utility to allow an optional `timezone` parameter. If a timezone is provided, the main time will display the event's local time, with the user's local time shown as a tooltip.
+- Integrated the tooltip feature using Chakra UI.
 
 ### Task 2
-- would say took 1.5 hours to add feature. I had to come back to make this reusuable for components that may be built as requested. This was done with [the util](./src/utils/favourites.ts) and the [component](./src/components/FavouriteButton.tsx)
-- changed the functionality of the formatDateTime util to allow an optional parameter for timezone. If called with timezone, will show the timezone of the events location as the main time and the user time as a tooltip
-- designs were not provided so added to the end of cards. I also felt that a favourite should stand out more when there was only 1 or 2 in the section. So I made them bigger than the rest. I tried to keep design patterns the same for how they were displayed originally. So the favourites are placed differntly. This may be a point for debate but I see it both ways
--I also decided to only place them on their pages (/events and /venues). Didn't make sense to me to have them there
+- **Estimated time**: 1.5 hours
+- Implemented a feature to allow for reusable components, which may be needed in future development. This was done by updating the [utility](./src/utils/favourites.ts) and creating the [component](./src/components/FavouriteButton.tsx).
+- Due to the absence of provided designs, I placed the "favourite" feature at the end of the cards. Additionally, I made the "favourite" elements larger when there were only one or two in a section, ensuring they stand out more. I followed existing design patterns as closely as possible, but the placement differs slightly, which might be a point of discussion.
+- Decided to limit the display of favourites to their respective pages (/events and /venues), as it didn’t make sense to include them elsewhere.
+- In a later commit, I created a [useFavouriteHook](./src/hooks/useFavouriteHook.ts) to improve code readability and maintainability.
 
 ### Task 3
+- **Estimated time**: 3-4 hours
+- Focused primarily on integrating the recommendation feature. Utilised the API's recommendation endpoint, adjusting the existing [useSeatGeek](./src/utils/useSeatGeek.ts) utility, and created a [Recommendations](./src/components/Recommendations.tsx) component. This component was added to the [Event](./src/pages/event/:id/Event.tsx) page to provide event-specific recommendations.
+- Restructured the project by separating pages and components to avoid confusion and reduce errors, which occurred due to similarly named components. This restructuring will improve future development and onboarding processes.
+- Refactored and componentised code as much as possible. In addition to the favourites feature, I also applied this approach to the event/venue details on their respective ID pages, recognising similarities in their formats. This should facilitate future development if similar pages are added.
+
+### If I had more time:
+- Introduced some test code, which wasn't a requirement, but in a real-life scenario, I would definitely implement it.
+- Enhanced the page further. This can be done by adding animations or more features. I purposely chose the features that I thought would be the most challenging so I decided against doing animations.
+
 
 ## Develop
 - create `.env` file based on `.env.sample`
