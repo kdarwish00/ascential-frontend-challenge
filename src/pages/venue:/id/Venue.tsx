@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { useParams } from "react-router-dom";
 import {
 	Flex,
@@ -6,25 +6,24 @@ import {
 	Stat,
 	StatLabel,
 	StatNumber,
-	StatHelpText,
 	SimpleGrid,
 	Box,
 	Spinner,
 	AspectRatio,
-	IconButton,
 } from "@chakra-ui/react";
-import { StarIcon } from "@chakra-ui/icons";
-import Breadcrumbs from "./Breadcrumbs";
-import Error from "./Error";
-import { useSeatGeek } from "../utils/useSeatGeek";
+import Breadcrumbs from "../../../components/Breadcrumbs";
+import Error from "../../../components/Error";
+import { useSeatGeek } from "../../../utils/useSeatGeek";
 import {
 	addFavourite,
 	removeFavourite,
-	isfavourite,
-} from "../utils/favourites";
+	isFavourite,
+} from "../../../utils/favourites";
+import FavouriteButton from "../../../components/FavouriteButton";
+import Details from "../../../components/Deatils";
 
 interface VenueProps {
-	id: number;
+	id: string;
 	name: string;
 	city: string;
 	country: string;
@@ -38,22 +37,18 @@ interface VenueProps {
 const Venue: React.FC = () => {
 	const { venueId } = useParams<{ venueId: string }>();
 	const { data: venue, error } = useSeatGeek(`venues/${venueId}`);
-	const [favourite, setfavourite] = useState<boolean>(false);
-
-	useEffect(() => {
-		if (venueId) {
-			setfavourite(isfavourite(venueId));
-		}
-	}, [venueId]);
+	const [favourite, setFavourite] = useState(
+		venueId ? isFavourite(venueId, "VenueFav") : false
+	);
 
 	const handleFavouriteToggle = () => {
 		if (venueId) {
 			if (favourite) {
-				removeFavourite(venueId);
+				removeFavourite(venueId, "VenueFav");
 			} else {
-				addFavourite(venueId);
+				addFavourite(venueId, "VenueFav");
 			}
-			setfavourite(!favourite);
+			setFavourite(!favourite);
 		}
 	};
 
@@ -78,12 +73,9 @@ const Venue: React.FC = () => {
 			/>
 			<Flex bgColor="gray.200" p={[4, 6]} justifyContent="space-between">
 				<Heading>{venue.name}</Heading>
-				<IconButton
-					aria-label="Add to favourites"
-					icon={<StarIcon />}
-					onClick={handleFavouriteToggle}
-					colorScheme={favourite ? "yellow" : "gray"}
-					variant="outline"
+				<FavouriteButton
+					isFavourite={favourite}
+					onToggle={handleFavouriteToggle}
 				/>
 			</Flex>
 			<Stats venue={venue} />
@@ -100,13 +92,7 @@ const Stats: React.FC<{ venue: VenueProps }> = ({ venue }) => (
 		m="6"
 		p="4"
 	>
-		<Stat>
-			<StatLabel display="flex">
-				<Box as="span">Location</Box>
-			</StatLabel>
-			<StatNumber fontSize="xl">{venue.city}</StatNumber>
-			<StatHelpText>{venue.country}</StatHelpText>
-		</Stat>
+		<Details label="Location" value={venue.city} helpText={venue.country} />
 		{venue.capacity > 0 && (
 			<Stat>
 				<StatLabel display="flex">

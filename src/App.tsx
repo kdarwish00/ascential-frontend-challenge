@@ -1,10 +1,10 @@
 import React from "react";
 import { BrowserRouter as Router, Route, Routes } from "react-router-dom";
 import Home from "./components/Home";
-import Venues from "./components/Venues";
-import Venue from "./components/Venue";
-import Events from "./components/Events";
-import Event from "./components/Event";
+import Venues from "./pages/venues/Venues";
+import Venue from "./pages/venue:/id/Venue";
+import Events from "./pages/events/Events";
+import Event from "./pages/event/:id/Event";
 import { Flex, Heading } from "@chakra-ui/react";
 
 const App: React.FC = () => (
