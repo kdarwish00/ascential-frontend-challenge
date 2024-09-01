@@ -14,17 +14,17 @@ import {
 	Stack,
 	Tooltip,
 } from "@chakra-ui/react";
-import Breadcrumbs from "./Breadcrumbs";
-import Error from "./Error";
-import { useSeatGeek } from "../utils/useSeatGeek";
-import { formatDateTime } from "../utils/formatDateTime";
+import Breadcrumbs from "../../../Breadcrumbs";
+import Error from "../../../Error";
+import { useSeatGeek } from "../../../../utils/useSeatGeek";
+import { formatDateTime } from "../../../../utils/formatDateTime";
 import {
 	addFavourite,
 	removeFavourite,
 	isFavourite,
-} from "../utils/favourites";
-import Recommendations from "./Recommendations";
-import FavouriteButton from "./FavouriteButton";
+} from "../../../../utils/favourites";
+import Recommendations from "../../../Recommendations";
+import FavouriteButton from "../../../FavouriteButton";
 
 const Event: React.FC = () => {
 	const { eventId } = useParams<{ eventId: string }>();
@@ -33,7 +33,7 @@ const Event: React.FC = () => {
 
 	useEffect(() => {
 		if (event) {
-			const isEventFavourite = isFavourite(event.id);
+			const isEventFavourite = isFavourite(event.id, "EventFav");
 			setFavourite(isEventFavourite);
 		}
 	}, [event]);
@@ -41,9 +41,9 @@ const Event: React.FC = () => {
 	const handleFavouriteToggle = () => {
 		if (event) {
 			if (favourite) {
-				removeFavourite(event.id);
+				removeFavourite(event.id, "EventFav");
 			} else {
-				addFavourite(event.id);
+				addFavourite(event.id, "EventFav");
 			}
 			setFavourite(!favourite);
 		}

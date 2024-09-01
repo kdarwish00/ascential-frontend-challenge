@@ -5,23 +5,23 @@ import {
 	Spinner,
 	Heading,
 	Text,
-	Box,
-	Badge,
 	LinkBox,
 	LinkOverlay,
+	Badge,
 	Select,
 } from "@chakra-ui/react";
 import { Link as BrowserLink } from "react-router-dom";
-import { useSeatGeek } from "../utils/useSeatGeek";
-import Error from "./Error";
-import Breadcrumbs from "./Breadcrumbs";
-import FavouriteButton from "./FavouriteButton";
+import { useSeatGeek } from "../../../utils/useSeatGeek";
+import Error from "../../Error";
+import Breadcrumbs from "../../Breadcrumbs";
+import FavouriteButton from "../../FavouriteButton";
 import {
-	getFavourites,
+	getLocalStorageList,
 	addFavourite,
 	removeFavourite,
-} from "../utils/favourites";
-import { filterVenuesByLocation } from "../utils/filterEvents";
+	isFavourite,
+} from "../../../utils/favourites";
+import { filterVenuesByLocation } from "../../../utils/filterEvents";
 
 export interface VenueProps {
 	id: number;
@@ -29,7 +29,6 @@ export interface VenueProps {
 	num_upcoming_events: number;
 	name_v2: string;
 	display_location: string;
-	venues: string;
 }
 
 interface VenueItemProps {
@@ -44,30 +43,14 @@ const Venues: React.FC = () => {
 		per_page: "24",
 	});
 
-	const [favouriteVenues, setFavouriteVenues] = useState<VenueProps[]>([]);
-	const [favouritesMap, setFavouritesMap] = useState<Record<number, boolean>>(
-		{}
-	);
 	const [selectedLocation, setSelectedLocation] = useState<string | null>(
 		null
 	);
 	const [uniqueLocations, setUniqueLocations] = useState<string[]>([]);
+	const [favouriteVenueIds, setFavouriteVenueIds] = useState<string[]>([]);
 
 	useEffect(() => {
 		if (data && data.venues) {
-			const favouriteIds = getFavourites();
-			const favouritesMap = favouriteIds.reduce((acc, id) => {
-				acc[parseInt(id)] = true;
-				return acc;
-			}, {} as Record<number, boolean>);
-			setFavouritesMap(favouritesMap);
-
-			// Filter favourite venues based on favourite IDs only
-			const filteredFavourites = data.venues.filter((venue: VenueProps) =>
-				favouriteIds.includes(venue.id.toString())
-			);
-			setFavouriteVenues(filteredFavourites || []);
-
 			const locations = [
 				...new Set(
 					data.venues.map(
@@ -79,28 +62,20 @@ const Venues: React.FC = () => {
 		}
 	}, [data]);
 
+	useEffect(() => {
+		const favouriteIds = getLocalStorageList("VenueFav");
+		setFavouriteVenueIds(favouriteIds);
+	}, []);
+
 	const handleFavouriteToggle = (id: number) => {
-		if (favouritesMap[id]) {
-			removeFavourite(id.toString());
+		if (isFavourite(id.toString(), "VenueFav")) {
+			removeFavourite(id.toString(), "VenueFav");
 		} else {
-			addFavourite(id.toString());
+			addFavourite(id.toString(), "VenueFav");
 		}
-		setFavouritesMap((prev) => {
-			const updatedMap = { ...prev, [id]: !prev[id] };
-			const updatedFavourites = Object.keys(updatedMap)
-				.filter((key) => updatedMap[parseInt(key)])
-				.map((key) => key.toString());
-			setFavouriteVenues(
-				data?.venues?.filter(
-					(venue: { id: { toString: () => string } }) =>
-						updatedFavourites.includes(venue.id.toString())
-				) || []
-			);
-			return updatedMap;
-		});
+		setFavouriteVenueIds(getLocalStorageList("VenueFav"));
 	};
 
-	// Apply location filter to all venues
 	const filteredAllVenues = filterVenuesByLocation(
 		data?.venues || [],
 		selectedLocation || ""
@@ -115,6 +90,10 @@ const Venues: React.FC = () => {
 			</Flex>
 		);
 	}
+
+	const favouriteVenues = filteredAllVenues.filter((venue: VenueProps) =>
+		favouriteVenueIds.includes(venue.id.toString())
+	);
 
 	return (
 		<>
@@ -151,7 +130,7 @@ const Venues: React.FC = () => {
 							<VenueItem
 								key={venue.id.toString()}
 								venue={venue}
-								isFavourite={!!favouritesMap[venue.id]}
+								isFavourite={true}
 								onFavouriteToggle={handleFavouriteToggle}
 							/>
 						))}
@@ -167,7 +146,9 @@ const Venues: React.FC = () => {
 					<VenueItem
 						key={venue.id.toString()}
 						venue={venue}
-						isFavourite={!!favouritesMap[venue.id]}
+						isFavourite={favouriteVenueIds.includes(
+							venue.id.toString()
+						)}
 						onFavouriteToggle={handleFavouriteToggle}
 					/>
 				))}
@@ -181,38 +162,32 @@ const VenueItem: React.FC<VenueItemProps> = ({
 	isFavourite,
 	onFavouriteToggle,
 }) => (
-	<LinkBox>
-		<Box
-			p={[4, 6]}
-			bg="gray.50"
-			borderColor="gray.200"
-			borderWidth="1px"
-			justifyContent="center"
-			alignContent="center"
-			rounded="lg"
-			_hover={{ bg: "gray.100" }}
-		>
-			<Badge
-				colorScheme={venue.has_upcoming_events ? "green" : "red"}
-				mb="2"
-			>
-				{`${
-					venue.has_upcoming_events ? venue.num_upcoming_events : "No"
-				} Upcoming Events`}
-			</Badge>
-			<Heading size="sm" noOfLines={1}>
-				<LinkOverlay as={BrowserLink} to={`/venues/${venue.id}`}>
-					{venue.name_v2}
-				</LinkOverlay>
-			</Heading>
-			<Text fontSize="sm" color="gray.500">
-				{venue.display_location}
-			</Text>
-			<FavouriteButton
-				isFavourite={isFavourite}
-				onToggle={() => onFavouriteToggle(venue.id)}
-			/>
-		</Box>
+	<LinkBox
+		as="article"
+		p={[4, 6]}
+		bg="gray.50"
+		borderColor="gray.200"
+		borderWidth="1px"
+		rounded="lg"
+		_hover={{ bg: "gray.100" }}
+	>
+		<Badge colorScheme={venue.has_upcoming_events ? "green" : "red"} mb="2">
+			{venue.has_upcoming_events
+				? `${venue.num_upcoming_events} Upcoming Events`
+				: "No Upcoming Events"}
+		</Badge>
+		<Heading size="sm" noOfLines={1}>
+			<LinkOverlay as={BrowserLink} to={`/venues/${venue.id}`}>
+				{venue.name_v2}
+			</LinkOverlay>
+		</Heading>
+		<Text fontSize="sm" color="gray.500" mb="2">
+			{venue.display_location}
+		</Text>
+		<FavouriteButton
+			isFavourite={isFavourite}
+			onToggle={() => onFavouriteToggle(venue.id)}
+		/>
 	</LinkBox>
 );
 

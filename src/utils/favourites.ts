@@ -2,11 +2,11 @@
  * Retrieves the list of favourite item IDs from local storage.
  *
  * @returns {string[]} An array of strings representing the IDs of favourite items.
- * If there are no favourites stored, returns an empty array.
+ * If there are no storageItems, returns an empty array.
  */
-export const getFavourites = (): string[] => {
-	const favourites = localStorage.getItem("favourites");
-	return favourites ? JSON.parse(favourites) : [];
+export const getLocalStorageList = (storage: string): string[] => {
+	const storageItems = localStorage.getItem(storage);
+	return storageItems ? JSON.parse(storageItems) : [];
 };
 
 /**
@@ -16,11 +16,11 @@ export const getFavourites = (): string[] => {
  *
  * @returns {void} This function does not return a value. It modifies the favourites list in local storage.
  */
-export const addFavourite = (id: string): void => {
-	const favourites = getFavourites();
+export const addFavourite = (id: string, storage: string): void => {
+	const favourites = getLocalStorageList(storage);
 	if (!favourites.includes(id)) {
 		favourites.push(id);
-		localStorage.setItem("favourites", JSON.stringify(favourites));
+		localStorage.setItem(storage, JSON.stringify(favourites));
 	}
 };
 
@@ -31,10 +31,10 @@ export const addFavourite = (id: string): void => {
  *
  * @returns {void} This function does not return a value. It modifies the favourites list in local storage.
  */
-export const removeFavourite = (id: string): void => {
-	let favourites = getFavourites();
+export const removeFavourite = (id: string, storage: string): void => {
+	let favourites = getLocalStorageList(storage);
 	favourites = favourites.filter((favourite) => favourite !== id);
-	localStorage.setItem("favourites", JSON.stringify(favourites));
+	localStorage.setItem(storage, JSON.stringify(favourites));
 };
 
 /**
@@ -44,7 +44,7 @@ export const removeFavourite = (id: string): void => {
  *
  * @returns {boolean} Returns `true` if the item ID is in the favourites list, otherwise `false`.
  */
-export const isFavourite = (id: string): boolean => {
-	const favourites = getFavourites();
+export const isFavourite = (id: string, storage: string): boolean => {
+	const favourites = getLocalStorageList(storage);
 	return favourites.includes(id);
 };

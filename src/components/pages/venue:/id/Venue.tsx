@@ -12,18 +12,18 @@ import {
 	Spinner,
 	AspectRatio,
 } from "@chakra-ui/react";
-import Breadcrumbs from "./Breadcrumbs";
-import Error from "./Error";
-import { useSeatGeek } from "../utils/useSeatGeek";
+import Breadcrumbs from "../../../Breadcrumbs";
+import Error from "../../../Error";
+import { useSeatGeek } from "../../../../utils/useSeatGeek";
 import {
 	addFavourite,
 	removeFavourite,
 	isFavourite,
-} from "../utils/favourites";
-import FavouriteButton from "./FavouriteButton";
+} from "../../../../utils/favourites";
+import FavouriteButton from "../../../FavouriteButton";
 
 interface VenueProps {
-	id: number;
+	id: string;
 	name: string;
 	city: string;
 	country: string;
@@ -41,16 +41,16 @@ const Venue: React.FC = () => {
 
 	useEffect(() => {
 		if (venueId) {
-			setFavourite(isFavourite(venueId));
+			setFavourite(isFavourite(venueId, "VenueFav"));
 		}
 	}, [venueId]);
 
 	const handleFavouriteToggle = () => {
 		if (venueId) {
 			if (favourite) {
-				removeFavourite(venueId);
+				removeFavourite(venueId, "VenueFav");
 			} else {
-				addFavourite(venueId);
+				addFavourite(venueId, "VenueFav");
 			}
 			setFavourite(!favourite);
 		}
