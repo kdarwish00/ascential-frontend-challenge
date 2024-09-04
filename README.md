@@ -20,9 +20,10 @@
 - Restructured the project by separating pages and components to avoid confusion and reduce errors, which occurred due to similarly named components. This restructuring will improve future development and onboarding processes.
 - Refactored and componentised code as much as possible. In addition to the favourites feature, I also applied this approach to the event/venue details on their respective ID pages, recognising similarities in their formats. This should facilitate future development if similar pages are added.
 
-### If I had more time:
+### Improvements:
 - Introduced some test code, which wasn't a requirement, but in a real-life scenario, I would definitely implement it.
 - Enhanced the page further. This can be done by adding animations or more features. I purposely chose the features that I thought would be the most challenging so I decided against doing animations.
+- Move all types to its own folder
 
 
 ## Develop
